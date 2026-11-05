@@ -57,3 +57,17 @@ def test_llm_refusal_detected():
 def test_prompt_contains_dates_and_publishers():
     p = ans.build_prompt("q", fake_chunks())
     assert "2026-06-21" in p and "WHO AFRO" in p and "[2]" in p
+
+
+def test_bm25_ranks_keyword_match_first():
+    from src.backends import bm25_build, bm25_score
+    texts = ["Nigeria contact tracing 894 contacts in Lagos",
+             "COVID-19 vaccine priority groups older adults",
+             "Bundibugyo virus disease confirmed cases DRC"]
+    scores = bm25_score(bm25_build(texts), "How many contacts were traced in Nigeria?")
+    assert scores.argmax() == 0 and scores[1] == 0
+
+
+def test_tokenizer_keeps_numbers_and_hyphens():
+    from src.backends import tokenize
+    assert tokenize("COVID-19 cases: 1048, CFR 25.5%") == ["covid-19", "cases", "1048", "cfr", "25.5"]

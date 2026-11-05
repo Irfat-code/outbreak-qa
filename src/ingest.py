@@ -11,8 +11,8 @@ import re
 
 import numpy as np
 
-from src.config import (CHUNK_OVERLAP_WORDS, CHUNK_WORDS, EMBED_MODEL,
-                        INDEX_DIR, RAW_DIR, SOURCES_CSV)
+from src.config import (CHUNK_OVERLAP_WORDS, CHUNK_WORDS, INDEX_DIR, RAW_DIR,
+                        RETRIEVER, SOURCES_CSV)
 
 
 def load_sources() -> dict:
@@ -81,24 +81,20 @@ def build_chunks(sources: dict) -> list[dict]:
     return chunks
 
 
-def embed(texts: list[str]) -> np.ndarray:
-    from sentence_transformers import SentenceTransformer
-    model = SentenceTransformer(EMBED_MODEL)
-    return model.encode(texts, batch_size=32, show_progress_bar=True,
-                        normalize_embeddings=True).astype("float32")
-
-
 def main() -> None:
     chunks = build_chunks(load_sources())
     if not chunks:
         raise SystemExit("No chunks - run scripts/download.py first.")
-    vectors = embed([c["text"] for c in chunks])
     INDEX_DIR.mkdir(parents=True, exist_ok=True)
-    np.save(INDEX_DIR / "embeddings.npy", vectors)
+    if RETRIEVER in ("fastembed", "st"):
+        from src.backends import dense_embed
+        print(f"Embedding {len(chunks)} chunks with {RETRIEVER} (first run downloads the model)...")
+        np.save(INDEX_DIR / "embeddings.npy", dense_embed(RETRIEVER, [c["text"] for c in chunks]))
+    (INDEX_DIR / "retriever.txt").write_text(RETRIEVER)
     with open(INDEX_DIR / "chunks.jsonl", "w", encoding="utf-8") as f:
         for c in chunks:
             f.write(json.dumps(c, ensure_ascii=False) + "\n")
-    print(f"\nSaved {len(chunks)} chunks to {INDEX_DIR}")
+    print(f"\nSaved {len(chunks)} chunks to {INDEX_DIR} (retriever: {RETRIEVER})")
 
 
 if __name__ == "__main__":

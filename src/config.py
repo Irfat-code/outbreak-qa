@@ -19,15 +19,20 @@ LLM_TEMPERATURE = 0.0                                   # deterministic-ish for 
 LLM_MAX_RETRIES = 5
 LLM_MIN_SECONDS_BETWEEN_CALLS = 4.0                     # stay under free-tier per-minute caps
 
-# --- Embeddings (run locally, no API key needed) ---------------------------
+# --- Retrieval backend ------------------------------------------------------
+# "fastembed" (dense, no PyTorch), "bm25" (keyword, pure Python) or "st" (PyTorch).
+RETRIEVER = os.getenv("RETRIEVER", "fastembed")
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+BM25_K1 = 1.5
+BM25_B = 0.75
 
 # --- Chunking / retrieval --------------------------------------------------
 CHUNK_WORDS = 220
 CHUNK_OVERLAP_WORDS = 40
 TOP_K = 5
 # If the best chunk scores below this, refuse without calling the LLM.
-# Tune it on Day 6 using your eval results.
-MIN_RETRIEVAL_SCORE = 0.30
+# Scales differ: cosine (dense) is 0-1, BM25 is unbounded. Tune on Day 6.
+MIN_RETRIEVAL_SCORE = float(os.getenv("MIN_RETRIEVAL_SCORE",
+                                      "4.0" if RETRIEVER == "bm25" else "0.30"))
 
 REFUSAL_TEXT = "Not in these documents."

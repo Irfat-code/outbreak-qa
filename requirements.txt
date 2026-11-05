@@ -2,7 +2,8 @@ requests>=2.31
 pypdf>=4.0
 beautifulsoup4>=4.12
 numpy>=1.26
-sentence-transformers>=2.7
+fastembed>=0.4            # dense embeddings via ONNX, no PyTorch
+# sentence-transformers>=2.7  # only if RETRIEVER=st (needs PyTorch)
 google-genai>=1.0
 python-dotenv>=1.0
 # optional fallback provider:
