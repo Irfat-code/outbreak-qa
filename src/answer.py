@@ -33,9 +33,18 @@ def build_prompt(question: str, chunks: list[dict]) -> str:
 
 
 def parse_citations(text: str, chunks: list[dict]) -> list[dict]:
-    """Map [n] markers in the answer back to chunks; ignore out-of-range numbers."""
-    nums = sorted({int(n) for n in re.findall(r"\[(\d+)\]", text)})
-    return [chunks[n - 1] for n in nums if 1 <= n <= len(chunks)]
+    """Map citation markers back to chunks; ignore out-of-range numbers.
+
+    Accepts [2], [1][3], [1, 3] and the styles some models use instead,
+    such as 【2】 and 【1†L1-L3】.
+    """
+    nums = set()
+    for group in CITATION_RE.findall(text):
+        nums.update(int(n) for n in re.findall(r"\d+", group))
+    return [chunks[n - 1] for n in sorted(nums) if 1 <= n <= len(chunks)]
+
+
+CITATION_RE = re.compile(r"[\[【]\s*(\d+(?:\s*,\s*\d+)*)\s*(?:†[^\]】]*)?[\]】]")
 
 
 def answer(question: str, retrieve=None, generate=None) -> dict:
@@ -46,7 +55,7 @@ def answer(question: str, retrieve=None, generate=None) -> dict:
         from src.llm import generate
 
     chunks = retrieve(question)
-    top_score = chunks[0]["score"] if chunks else 0.0
+    top_score = max((c["score"] for c in chunks), default=0.0)
     if top_score < MIN_RETRIEVAL_SCORE:
         return {"question": question, "answer": REFUSAL_TEXT, "refused": True,
                 "refusal_stage": "retrieval", "top_score": top_score,

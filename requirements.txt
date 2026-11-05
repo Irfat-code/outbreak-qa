@@ -8,4 +8,5 @@ google-genai>=1.0
 python-dotenv>=1.0
 # optional fallback provider:
 # anthropic>=0.40
+# groq>=0.9                 # only if LLM_PROVIDER=groq
 pytest>=8.0

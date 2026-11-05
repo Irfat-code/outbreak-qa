@@ -11,8 +11,9 @@ import re
 
 import numpy as np
 
-from src.config import (CHUNK_OVERLAP_WORDS, CHUNK_WORDS, INDEX_DIR, RAW_DIR,
-                        RETRIEVER, SOURCES_CSV)
+from src.config import (CHUNK_HEADERS, CHUNK_OVERLAP_WORDS, CHUNK_WORDS, EMBED_MODEL,
+                        INDEX_DIR, RAW_DIR, RETRIEVER, SOURCES_CSV)
+from src.backends import search_text
 
 
 def load_sources() -> dict:
@@ -32,7 +33,19 @@ def read_html(path) -> list[tuple[int, str]]:
     for tag in soup(["script", "style", "nav", "header", "footer", "form", "aside"]):
         tag.decompose()
     main = soup.find("main") or soup.find("article") or soup.body or soup
-    return [(1, main.get_text(" "))]
+    return [(1, strip_page_furniture(main.get_text(" ")))]
+
+
+# Text after these markers on WHO/AFRO pages is navigation (related publications,
+# share buttons, newer reports), not the document itself. Keeping it lets a page
+# 'mention' reports and dates it doesn't contain.
+FURNITURE_MARKERS = ["Related Publications", "Related publications", "Related links",
+                     "Related news", "See all →", "Download from IRIS"]
+
+
+def strip_page_furniture(text: str) -> str:
+    cut = min((i for i in (text.find(m) for m in FURNITURE_MARKERS) if i > 200), default=len(text))
+    return text[:cut]
 
 
 def clean(text: str) -> str:
@@ -75,6 +88,7 @@ def build_chunks(sources: dict) -> list[dict]:
                     "pub_date": meta["pub_date"],
                     "topic": meta["topic"],
                     "page": page_no,
+                    "header": f"{meta['title']} ({meta['publisher']})" if CHUNK_HEADERS else "",
                     "text": text,
                 })
         print(f"{doc_id:<22} {len(chunks) - n_before:>4} chunks")
@@ -86,11 +100,15 @@ def main() -> None:
     if not chunks:
         raise SystemExit("No chunks - run scripts/download.py first.")
     INDEX_DIR.mkdir(parents=True, exist_ok=True)
-    if RETRIEVER in ("fastembed", "st"):
+    if RETRIEVER in ("fastembed", "st", "hybrid"):
         from src.backends import dense_embed
-        print(f"Embedding {len(chunks)} chunks with {RETRIEVER} (first run downloads the model)...")
-        np.save(INDEX_DIR / "embeddings.npy", dense_embed(RETRIEVER, [c["text"] for c in chunks]))
+        kind = "fastembed" if RETRIEVER == "hybrid" else RETRIEVER
+        print(f"Embedding {len(chunks)} chunks with {kind} (first run downloads the model)...")
+        np.save(INDEX_DIR / "embeddings.npy", dense_embed(kind, [search_text(c) for c in chunks]))
     (INDEX_DIR / "retriever.txt").write_text(RETRIEVER)
+    (INDEX_DIR / "settings.json").write_text(json.dumps({
+        "embed_model": EMBED_MODEL, "chunk_headers": CHUNK_HEADERS,
+        "chunk_words": CHUNK_WORDS, "chunk_overlap_words": CHUNK_OVERLAP_WORDS}, indent=2))
     with open(INDEX_DIR / "chunks.jsonl", "w", encoding="utf-8") as f:
         for c in chunks:
             f.write(json.dumps(c, ensure_ascii=False) + "\n")

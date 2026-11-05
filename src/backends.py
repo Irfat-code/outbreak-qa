@@ -17,6 +17,12 @@ from src.config import BM25_B, BM25_K1, EMBED_MODEL
 _TOKEN = re.compile(r"[a-z0-9]+(?:[.\-][a-z0-9]+)*")
 
 
+def search_text(chunk: dict) -> str:
+    """What retrieval searches over: optional document header + the passage."""
+    header = chunk.get("header") or ""
+    return f"{header}\n{chunk['text']}" if header else chunk["text"]
+
+
 def tokenize(text: str) -> list[str]:
     return _TOKEN.findall(text.lower())
 
