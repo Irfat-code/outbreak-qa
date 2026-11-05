@@ -1,0 +1,10 @@
+qid,type,question,expected_answer,expected_keywords,expected_doc_ids,should_refuse,verified
+q01,lookup,"How many laboratory-confirmed cases and confirmed deaths had DRC reported in the Bundibugyo outbreak as of 21 June 2026?","1048 confirmed cases, 267 confirmed deaths (CFR 25.5%)",1048|267,bdbv_sitrep06,no,no
+q02,date_trap,"What is the total number of confirmed Bundibugyo cases in DRC?","Depends on date: answer must name the date of the figure it gives (e.g. 6100 as of 30 Aug 2026 in the latest doc)",as of,bdbv_sitrep16|bdbv_sitrep11|bdbv_sitrep06,no,no
+q03,lookup,"How much money does the joint Africa CDC and WHO continental Ebola plan aim to raise, and for what period?","US$518 million, June to November 2026",518|November,bdbv_response_plan,no,no
+q04,species_trap,"Is there a licensed vaccine for Bundibugyo virus disease?","No licensed vaccine or therapeutic for Bundibugyo (Ervebo/rVSV is for Zaire ebolavirus)",no,bdbv_response_plan|bdbv_don602,no,no
+q05,lookup,"How many people were infected and how many died in Nigeria's 2014 Ebola outbreak according to WHO?","19 infected, 7 died (WHO statement 20 Oct 2014)",19|7,nigeria2014_who,no,no
+q06,conflict_trap,"How many contacts were traced during Nigeria's 2014 Ebola outbreak?","Sources differ: 899 in the FETP case study; good answer flags the source",899,nigeria2014_contacts,no,no
+q07,lookup,"When did WHO declare that COVID-19 was no longer a public health emergency of international concern?","5 May 2023, after the 15th IHR Emergency Committee meeting on 4 May 2023",2023,covid_pheic_end,no,no
+q08,unanswerable,"How many Marburg virus cases were reported in Rwanda in 2024?","Not in these documents",,,yes,no
+q09,unanswerable,"What is the recommended dose of ivermectin for treating Bundibugyo virus disease?","Not in these documents (no such recommendation exists in corpus)",,,yes,no
